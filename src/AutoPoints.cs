@@ -46,7 +46,7 @@ namespace AutoPoints {
 		{
 			foreach (Players.Player owner in colony.Owners) {
 				if (owner.ConnectionState == Players.EConnectionState.Connected) {
-					Chat.Send(owner, $"Colony {colony.Name} has reached point capacity {colony.ColonyPointsCap:0:N0}");
+					Chat.Send(owner, $"Colony {colony.Name} has reached point capacity {colony.ColonyPointsCap:N0}");
 				}
 
 				UpgradeKey KeyCapacity;
@@ -56,7 +56,7 @@ namespace AutoPoints {
 				colony.UpgradeState.TryUnlock(colony, KeyCapacity, lvl);
 
 				if (owner.ConnectionState == Players.EConnectionState.Connected) {
-					Chat.Send(owner, $"Upgraded. {colony.Name} new limit is {colony.ColonyPointsCap:0:N0}");
+					Chat.Send(owner, $"Upgraded {colony.Name}. New limit is {colony.ColonyPointsCap:N0}");
 				}
 			}
 		}

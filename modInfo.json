@@ -1,0 +1,19 @@
+[
+	{
+		"name" : "AutoPoints",
+		"description" : "automatically extend CP capacity",
+		"version" : "1.0.1",
+		"isoptional" : true,
+		"enableddefault": false,
+		"dllpath" : "AutoPoints.dll",
+		"compatibleversions" : [
+			"0.8.1"
+		],
+		"patchnotes" : [
+			{ "version": "1.0.1", "notes": [
+				"inital version. upgrade point capacity always"
+				]
+			}
+		]
+	}
+]

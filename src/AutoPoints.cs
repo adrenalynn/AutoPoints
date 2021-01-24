@@ -9,9 +9,12 @@ namespace AutoPoints {
 	public static class AutoPoints
 	{
 		public const string NAMESPACE = "AutoPoints";
-		public const float CHECK_INTERVAL = 30.0f;
+		public const float CHECK_INTERVAL = 12.5f;
 		public static string MOD_DIRECTORY;
-		private static InterfaceManager interfaceClass = new InterfaceManager();
+		public static InterfaceManager interfaceClass = new InterfaceManager();
+		private static UpgradeKey keyCapacity, keyEfficiency;
+		private static ColonyPointCapacityUpgrade upgradeCapacity;
+		private static ColonyPointMultiplierUpgrade upgradeEfficiency;
 
 		public static void AssemblyLoaded(string path)
 		{
@@ -21,6 +24,12 @@ namespace AutoPoints {
 
 		public static void WorldStarted()
 		{
+			IUpgrade iUpgradeCapacity, iUpgradeEfficiency;
+			ServerManager.UpgradeManager.TryGetKeyUpgrade("pipliz.colonypointcap", out keyCapacity, out iUpgradeCapacity);
+			ServerManager.UpgradeManager.TryGetKeyUpgrade("pipliz.pointmultiplier", out keyEfficiency, out iUpgradeEfficiency);
+			upgradeCapacity = (ColonyPointCapacityUpgrade) iUpgradeCapacity;
+			upgradeEfficiency = (ColonyPointMultiplierUpgrade) iUpgradeEfficiency;
+
 			ThreadManager.InvokeOnMainThread(delegate() {
 				CheckColonies();
 			}, CHECK_INTERVAL);
@@ -30,9 +39,12 @@ namespace AutoPoints {
 		public static void CheckColonies()
 		{
 			foreach (Colony colony in ServerManager.ColonyTracker.ColoniesByID.Values) {
-				if (colony.ColonyPoints == colony.ColonyPointsCap) {
-					ProcessColony(colony);
+				if (colony.Banners.Length == 0 || colony.Owners.Length == 0) {
+					continue;
 				}
+
+				CheckAndPerformEfficiencyUpgrade(colony);
+				CheckAndPerformCapacityUpgrade(colony);
 			}
 
 			// queue self again
@@ -41,22 +53,37 @@ namespace AutoPoints {
 			}, CHECK_INTERVAL);
 		}
 
-		// process one colony
-		public static void ProcessColony(Colony colony)
+		public static void CheckAndPerformEfficiencyUpgrade(Colony colony)
 		{
-			foreach (Players.Player owner in colony.Owners) {
-				if (owner.ConnectionState == Players.EConnectionState.Connected) {
-					Chat.Send(owner, $"Colony {colony.Name} has reached point capacity {colony.ColonyPointsCap:N0}");
+			int lvlEfficiency = colony.UpgradeState.GetUnlockedLevels(keyEfficiency);
+			if (lvlEfficiency < upgradeEfficiency.LevelCount) {
+				long costEfficiency = upgradeEfficiency.GetUpgradeCost(lvlEfficiency);
+
+				if (colony.ColonyPoints >= costEfficiency) {
+					long? current = ColonyPointMultiplierUpgrade.GetCapacity(upgradeEfficiency.Levels, lvlEfficiency, 0);
+					foreach (Players.Player owner in colony.Owners) {
+						if (owner.ConnectionState == Players.EConnectionState.Connected) {
+							Chat.Send(owner, $"Upgraded {colony.Name} points efficiency to {current + 100}%");
+						}
+					}
+					colony.UpgradeState.TryUnlock(colony, keyEfficiency, lvlEfficiency);
 				}
+			}
+		}
 
-				UpgradeKey KeyCapacity;
-				IUpgrade UpgradeCapacity;
-				ServerManager.UpgradeManager.TryGetKeyUpgrade("pipliz.colonypointcap", out KeyCapacity, out UpgradeCapacity);
-				int lvl = colony.UpgradeState.GetUnlockedLevels(KeyCapacity);
-				colony.UpgradeState.TryUnlock(colony, KeyCapacity, lvl);
-
-				if (owner.ConnectionState == Players.EConnectionState.Connected) {
-					Chat.Send(owner, $"Upgraded {colony.Name}. New limit is {colony.ColonyPointsCap:N0}");
+		public static void CheckAndPerformCapacityUpgrade(Colony colony)
+		{
+			int lvlCapacity = colony.UpgradeState.GetUnlockedLevels(keyCapacity);
+			if (lvlCapacity < upgradeCapacity.LevelCount) {
+				long costCapacity = upgradeCapacity.GetUpgradeCost(lvlCapacity);
+				if (colony.ColonyPoints >= costCapacity) {
+					long? current = upgradeCapacity.Levels[lvlCapacity].capacity;
+					foreach (Players.Player owner in colony.Owners) {
+						if (owner.ConnectionState == Players.EConnectionState.Connected) {
+							Chat.Send(owner, $"Upgraded {colony.Name} max point capacity to {current:N0}");
+						}
+					}
+					colony.UpgradeState.TryUnlock(colony, keyCapacity, lvlCapacity);
 				}
 			}
 		}

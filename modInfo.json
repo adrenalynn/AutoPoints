@@ -2,7 +2,7 @@
 	{
 		"name" : "AutoPoints",
 		"description" : "automatically extend CP capacity",
-		"version" : "1.0.1",
+		"version" : "1.0.2",
 		"isoptional" : true,
 		"enableddefault": false,
 		"dllpath" : "AutoPoints.dll",
@@ -10,6 +10,11 @@
 			"0.8.1"
 		],
 		"patchnotes" : [
+			{ "version": "1.0.2", "notes": [
+				"apply efficiency upgrades first and point capacity second.",
+				"/points notify [value] to trigger a notification for a colony"
+				]
+			},
 			{ "version": "1.0.1", "notes": [
 				"inital version. upgrade point capacity always"
 				]
